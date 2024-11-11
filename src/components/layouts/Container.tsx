@@ -19,13 +19,16 @@ const STORAGE_KEY_NAMES = {
 function IndexPopup() {
     const [currentUrl, setCurrentUrl] = useState<string>("");
     const [selectedKey, setSelectedKey] = useState<string | null>(null);
-    const [savedUrls, setSavedUrls] = useState<Record<string, string[]>>({
-        mistralUrls: [],
-        geminiUrls: [],
-        claudeUrls: [],
-        gptUrls: []
-    });
+    const [savedUrls, setSavedUrls] = useState<Record<string, { url: string; description: string }[]>>(
+        {
+            mistralUrls: [],
+            geminiUrls: [],
+            claudeUrls: [],
+            gptUrls: []
+        }
+    );
     const storage = new Storage();
+    const [description, setDescription] = useState<string>("");
 
     function getStorageKey(url: string): string | null {
         try {
@@ -42,14 +45,15 @@ function IndexPopup() {
             const storageKey = getStorageKey(currentUrl);
             if (!storageKey) return;
 
-            const existingUrls: string[] = (await storage.get(storageKey)) || [];
-            if (!existingUrls.includes(currentUrl)) {
-                existingUrls.push(currentUrl);
+            const existingUrls: { url: string; description: string }[] = (await storage.get(storageKey)) || [];
+            if (!existingUrls.some(url => url.url === currentUrl)) {
+                existingUrls.push({ url: currentUrl, description: description });
                 await storage.set(storageKey, existingUrls);
                 setSavedUrls(prev => ({
                     ...prev,
                     [storageKey]: existingUrls
                 }));
+                setDescription(""); // Clear the description input after saving
             }
         } catch (error) {
             console.error("Error saving URL:", error);
@@ -58,7 +62,7 @@ function IndexPopup() {
 
     async function loadAllSavedUrls() {
         try {
-            const allUrls: Record<string, string[]> = {};
+            const allUrls: Record<string, { url: string; description: string }[]> = {};
             for (const key of Object.values(DOMAIN_STORAGE_KEYS)) {
                 allUrls[key] = (await storage.get(key)) || [];
             }
@@ -70,7 +74,7 @@ function IndexPopup() {
 
     async function deleteUrl(storageKey: string, urlToDelete: string) {
         try {
-            const updatedUrls = savedUrls[storageKey].filter(url => url !== urlToDelete);
+            const updatedUrls = savedUrls[storageKey].filter(url => url.url !== urlToDelete);
             await storage.set(storageKey, updatedUrls);
             setSavedUrls(prev => ({
                 ...prev,
@@ -106,12 +110,21 @@ function IndexPopup() {
 
             <div className="mb-6 text-center">
                 {shouldDisplaySaveButton && (
-                    <button
-                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-300"
-                        onClick={clickToSave}
-                    >
-                        Save Current URL
-                    </button>
+                    <>
+                        <input
+                            type="text"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Description"
+                            className="mb-2 px-4 py-2 border border-gray-300 rounded-md"
+                        />
+                        <button
+                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-300"
+                            onClick={clickToSave}
+                        >
+                            Save Current URL!!!
+                        </button>
+                    </>
                 )}
             </div>
 
@@ -139,15 +152,16 @@ function IndexPopup() {
                                 {savedUrls[selectedKey].map((url, index) => (
                                     <li key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
                                         <a
-                                            href={url}
+                                            href={url.url}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-sm text-blue-600 hover:text-blue-800 truncate flex-1 mr-2"
                                         >
-                                            {new URL(url).pathname}
+                                            {url.url} {/* Changed from new URL(url.url).pathname to url.url */}
                                         </a>
+                                        <p className="text-sm text-gray-600">{url.description}</p>
                                         <button
-                                            onClick={() => deleteUrl(selectedKey, url)}
+                                            onClick={() => deleteUrl(selectedKey, url.url)}
                                             className="text-red-500 hover:text-red-700 text-sm px-2"
                                         >
                                             ×
