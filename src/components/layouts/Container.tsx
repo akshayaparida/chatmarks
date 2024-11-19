@@ -16,19 +16,37 @@ const STORAGE_KEY_NAMES = {
     gptUrls: "ChatGPT"
 } as const;
 
+function truncateUrl(url: string): string {
+    try {
+        const urlObj = new URL(url);
+        const pathSegments = urlObj.pathname.split('/').filter(Boolean);
+        let truncatedPath = pathSegments.length > 0
+            ? `/${pathSegments[0]}${pathSegments.length > 1 ? '/...' : ''}`
+            : '/';
+        return `${urlObj.hostname}${truncatedPath}`;
+    } catch (error) {
+        return url.substring(0, 30) + '...';
+    }
+}
+
+function truncateText(text: string, maxLength: number): string {
+    if (!text) return '';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+}
+
 function IndexPopup() {
     const [currentUrl, setCurrentUrl] = useState<string>("");
     const [selectedKey, setSelectedKey] = useState<string | null>(null);
-    const [savedUrls, setSavedUrls] = useState<Record<string, { url: string; description: string }[]>>(
-        {
-            mistralUrls: [],
-            geminiUrls: [],
-            claudeUrls: [],
-            gptUrls: []
-        }
-    );
+    const [savedUrls, setSavedUrls] = useState<Record<string, { url: string; description: string }[]>>({
+        mistralUrls: [],
+        geminiUrls: [],
+        claudeUrls: [],
+        gptUrls: []
+    });
     const storage = new Storage();
     const [description, setDescription] = useState<string>("");
+    const [searchQuery, setSearchQuery] = useState<string>("");
+    const [hoveredUrl, setHoveredUrl] = useState<string | null>(null);
 
     function getStorageKey(url: string): string | null {
         try {
@@ -53,7 +71,7 @@ function IndexPopup() {
                     ...prev,
                     [storageKey]: existingUrls
                 }));
-                setDescription(""); // Clear the description input after saving
+                setDescription("");
             }
         } catch (error) {
             console.error("Error saving URL:", error);
@@ -105,76 +123,182 @@ function IndexPopup() {
 
     const shouldDisplaySaveButton = currentUrl && getStorageKey(currentUrl);
 
+    const getFilteredResults = () => {
+        const query = searchQuery.toLowerCase();
+        let results: { storageKey: string; url: string; description: string }[] = [];
+
+        // When searching, include results from all categories
+        if (searchQuery) {
+            Object.entries(savedUrls).forEach(([storageKey, urls]) => {
+                urls.forEach(item => {
+                    if (item.description.toLowerCase().includes(query) ||
+                        item.url.toLowerCase().includes(query)) {
+                        results.push({
+                            storageKey,
+                            url: item.url,
+                            description: item.description
+                        });
+                    }
+                });
+            });
+        } else {
+            // When not searching, only show results from selected category
+            Object.entries(savedUrls).forEach(([storageKey, urls]) => {
+                if (!selectedKey || storageKey === selectedKey) {
+                    urls.forEach(item => {
+                        results.push({
+                            storageKey,
+                            url: item.url,
+                            description: item.description
+                        });
+                    });
+                }
+            });
+        }
+
+        return results;
+    };
+
+    const getTotalUrlCount = (storageKey?: string) => {
+        if (storageKey) {
+            return savedUrls[storageKey].length;
+        }
+        return Object.values(savedUrls).reduce((total, urls) => total + urls.length, 0);
+    };
+
+    const filteredResults = getFilteredResults();
+
     return (
-        <div className="w-[400px] min-h-[300px] p-4">
-
-            <div className="mb-6 text-center">
-                {shouldDisplaySaveButton && (
-                    <>
-                        <input
-                            type="text"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Description"
-                            className="mb-2 px-4 py-2 border border-gray-300 rounded-md"
-                        />
+        <div className="w-[400px] min-h-[300px] p-4 bg-gray-50">
+            <div className="mb-4">
+                <div className="relative">
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            if (e.target.value) {
+                                setSelectedKey(null); // Clear category selection when searching
+                            }
+                        }}
+                        placeholder="Search across all saved URLs..."
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200"
+                    />
+                    {searchQuery && (
                         <button
-                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-300"
-                            onClick={clickToSave}
+                            onClick={() => setSearchQuery("")}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                         >
-                            Save Current URL!!!
+                            ×
                         </button>
-                    </>
-                )}
+                    )}
+                </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 mb-4">
-                {Object.entries(STORAGE_KEY_NAMES).map(([key, name]) => (
+            {shouldDisplaySaveButton && (
+                <div className="mb-6 space-y-2 bg-white p-4 rounded-lg shadow-sm">
+                    <input
+                        type="text"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Add a description..."
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
                     <button
-                        key={key}
-                        className={`px-3 py-2 rounded transition duration-300 ${selectedKey === key
-                            ? "bg-blue-600 text-white"
-                            : "bg-gray-200 hover:bg-gray-300 text-gray-800"
-                            }`}
-                        onClick={() => setSelectedKey(key === selectedKey ? null : key)}
+                        className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-200 text-sm font-medium shadow-sm"
+                        onClick={clickToSave}
                     >
-                        {name} ({savedUrls[key]?.length || 0})
+                        Save Current URL
                     </button>
-                ))}
-            </div>
-
-            {selectedKey && (
-                <div className="mt-4">
-                    <h3 className="font-semibold mb-2">{STORAGE_KEY_NAMES[selectedKey as keyof typeof STORAGE_KEY_NAMES]} URLs:</h3>
-                    <div className="max-h-[200px] overflow-y-auto">
-                        {savedUrls[selectedKey]?.length > 0 ? (
-                            <ul className="space-y-2">
-                                {savedUrls[selectedKey].map((url, index) => (
-                                    <li key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                                        <a
-                                            href={url.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-sm text-blue-600 hover:text-blue-800 truncate flex-1 mr-2"
-                                        >
-                                            {url.url} {/* Changed from new URL(url.url).pathname to url.url */}
-                                        </a>
-                                        <p className="text-sm text-gray-600">{url.description}</p>
-                                        <button
-                                            onClick={() => deleteUrl(selectedKey, url.url)}
-                                            className="text-red-500 hover:text-red-700 text-sm px-2"
-                                        >
-                                            ×
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <p className="text-gray-500 text-sm">No saved URLs</p>
-                        )}
-                    </div>
                 </div>
             )}
+
+            {!searchQuery && (
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                    {Object.entries(STORAGE_KEY_NAMES).map(([key, name]) => (
+                        <button
+                            key={key}
+                            className={`px-3 py-2 rounded-md transition duration-200 text-sm font-medium shadow-sm
+                                ${selectedKey === key
+                                    ? "bg-blue-600 text-white ring-2 ring-blue-300"
+                                    : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200"
+                                }`}
+                            onClick={() => setSelectedKey(key === selectedKey ? null : key)}
+                        >
+                            {name} ({getTotalUrlCount(key)})
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            <div className="mt-4">
+                {filteredResults.length > 0 ? (
+                    <div>
+                        <h3 className="font-medium text-sm text-gray-600 mb-3">
+                            {filteredResults.length} result{filteredResults.length !== 1 ? 's' : ''}
+                            {!searchQuery && selectedKey ? ` in ${STORAGE_KEY_NAMES[selectedKey as keyof typeof STORAGE_KEY_NAMES]}` : ''}
+                        </h3>
+                        <div className="max-h-[300px] overflow-y-auto pr-2 space-y-2">
+                            {filteredResults.map((item, index) => (
+                                <div key={index}
+                                    className="flex items-start bg-white p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-all duration-200 group shadow-sm">
+                                    <div className="flex flex-col flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 w-full">
+                                            {(!selectedKey || searchQuery) && (
+                                                <span className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded-md font-medium">
+                                                    {STORAGE_KEY_NAMES[item.storageKey as keyof typeof STORAGE_KEY_NAMES]}
+                                                </span>
+                                            )}
+                                            <div className="relative flex-1 min-w-0">
+                                                <a
+                                                    href={item.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-sm text-blue-600 hover:text-blue-700 truncate block"
+                                                    onMouseEnter={() => setHoveredUrl(item.url)}
+                                                    onMouseLeave={() => setHoveredUrl(null)}
+                                                    title={item.url}
+                                                >
+                                                    {truncateUrl(item.url)}
+                                                </a>
+                                                {hoveredUrl === item.url && (
+                                                    <div className="absolute z-10 bg-gray-900 text-white p-2 rounded-md text-xs mt-1 max-w-xs break-all shadow-lg">
+                                                        {item.url}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {item.description && (
+                                            <p className="text-sm text-gray-600 mt-1.5 truncate" title={item.description}>
+                                                {truncateText(item.description, 100)}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={() => deleteUrl(item.storageKey, item.url)}
+                                        className="text-gray-400 hover:text-red-500 text-lg px-2 ml-2 flex-shrink-0 transition-colors duration-200"
+                                        title="Delete"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="text-center text-gray-500 py-8">
+                        {getTotalUrlCount() > 0 ? (
+                            searchQuery ? (
+                                <p>No results found for "{searchQuery}"</p>
+                            ) : (
+                                <p>Start typing to search across {getTotalUrlCount()} saved URLs</p>
+                            )
+                        ) : (
+                            <p>No saved URLs yet</p>
+                        )}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

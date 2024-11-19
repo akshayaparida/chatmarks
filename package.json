@@ -1,8 +1,8 @@
 {
-  "name": "chatmarks",
-  "displayName": "Chatmarks",
-  "version": "0.0.1",
-  "description": "Your AI Conversations, Saved and Simplified.",
+  "name": "chatmark",
+  "displayName": "Chatmark",
+  "version": "0.1.0",
+  "description": "Save and access your important AI Conversations easily",
   "author": "Om Sarraf",
   "scripts": {
     "dev": "plasmo dev",
