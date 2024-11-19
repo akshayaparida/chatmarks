@@ -1,4 +1,5 @@
-# ![ChatMarks Logo](https://github.com/user-attachments/assets/5b7e648b-3134-40b1-bffc-a99be477bfc8)
+# ![ChatMarks Demo](https://github.com/user-attachments/assets/2164657a-63aa-439b-86ed-71ab167d7bfb)
+
 # ChatMarks - Bookmark Important AI Conversations
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/nhijgdophdlajaepkhffdccjkmccenon?label=Chrome%20Web%20Store)](https://chromewebstore.google.com/detail/chatmarks/nhijgdophdlajaepkhffdccjkmccenon?authuser=1&hl=en-GB)
