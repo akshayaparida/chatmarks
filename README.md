@@ -1,20 +1,19 @@
-# ![ChatMarks Demo](https://github.com/user-attachments/assets/2164657a-63aa-439b-86ed-71ab167d7bfb)
+# ![chatmarks](https://github.com/user-attachments/assets/4ba4b3f5-6bc3-4488-a9ed-e9b25bbb8645)
 
 # ChatMarks - Bookmark Important AI Conversations
 
-[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/nhijgdophdlajaepkhffdccjkmccenon?label=Chrome%20Web%20Store)](https://chromewebstore.google.com/detail/chatmarks/nhijgdophdlajaepkhffdccjkmccenon?authuser=1&hl=en-GB)
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/ijghhkhojebllacdnpibmjodkgdfpnhm?label=Chrome%20Web%20Store)](https://chrome.google.com/webstore/detail/chatmark/ijghhkhojebllacdnpibmjodkgdfpnhm?authuser=1&hl=en-GB)
 
 **[ChatMarks](https://chromewebstore.google.com/detail/chatmarks/nhijgdophdlajaepkhffdccjkmccenon?authuser=1&hl=en-GB)** is a Chrome extension that allows you to bookmark and organize important conversations with AI models like GPT, Gemini, Claude, and Mistral—all in one place. This open-source project aims to make it easy to save, tag, and retrieve key insights from your conversations, enhancing productivity and knowledge retention.
 
 ## Features
 - **Bookmark AI Conversations**: Save important conversation URLs with popular AI models in one click
-- **Tagging**: Organize bookmarks with custom tags for easy retrieval
 - **Description Field**: Add a brief description to each bookmark to remember key details
-- **Search and Summaries (Upcoming)**: Enhanced search functionality and AI-generated summaries are planned for future updates
+- **Search**: Enhanced search functionality and AI-generated summaries are planned for future updates
 
 ## Installation
 
-Get ChatMarks from the [Chrome Web Store](https://chromewebstore.google.com/detail/chatmarks/nhijgdophdlajaepkhffdccjkmccenon?authuser=1&hl=en-GB)
+Get ChatMarks from the [Chrome Web Store](https://chromewebstore.google.com/detail/chatmark/ijghhkhojebllacdnpibmjodkgdfpnhm?authuser=1&hl=en-GB)
 
 ## Contributing
 
